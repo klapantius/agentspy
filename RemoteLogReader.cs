@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace agentspy.net
 {
-    class RemoteLogReader : IDisposable
+    class RemoteLogReader : ILogReader
     {
         [DllImport("Mpr.dll")]
         private static extern int WNetUseConnection(
