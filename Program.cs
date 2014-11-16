@@ -16,7 +16,11 @@ namespace agentspy.net
 
             var spy = new AgentSpy();
 
-            spy.ScanVSTTAgentProcess_ColorByJobId();
+            //spy.ScanVSTTAgentProcess();
+            //spy.ScanVSTTAgentProcess_ColorByJobId();
+            spy.GroupByJobId();
+
+            Console.ForegroundColor = ConsoleColor.Gray;
             Console.WriteLine("done, press a key to finish");
             Console.ReadKey();
         }
@@ -155,6 +159,43 @@ namespace agentspy.net
             }
         }
 
+        public class Job
+        {
+            public string jobid;
+            public List<Dictionary<string, string>> lines = new List<Dictionary<string,string>>();
+        }
+        public void GroupByJobId(int max = int.MaxValue)
+        {
+            using (var file = CreateNewLogReader())
+            {
+                var count = 0;
+                var jobs = new List<Job>();
+                while (!file.EndOfStream && count++ < max)
+                {
+                    var line = file.ReadLine() ?? string.Empty;
+                    fields.ForEach(f => f.Reset());
+                    var isJobLine = this["jobid"].Evaluate(line);
+                    if (!isJobLine) continue;
+                    var matches = fields.AsParallel().Select(f => f.Evaluate(line)).ToList();
+                    this["linenr"].Value = count.ToString();
+                    var currentJob = jobs.SingleOrDefault(j => j.jobid == this["jobid"].Value);
+                    if (null == currentJob)
+                    {
+                        jobs.Add(new Job() { jobid = this["jobid"].Value });
+                        currentJob = jobs.Last();
+                    }
+                    currentJob.lines.Add(fields.ToDictionary(f => f.Name, f => f.ToString()));
+                }
+                foreach (var job in jobs)
+                {
+                    Console.WriteLine(job.jobid);
+                    foreach (var line in job.lines)
+                    {
+                        Console.WriteLine("\t{0} {1} {2} {3} {4}", line["linenr"], line["time"], line["state"], line["assembly"], line["tc"]);
+                    }
+                }
+            }
+        }
     }
 
     public class OptionsStore
