@@ -15,6 +15,7 @@ namespace agentspy.net
             Options.Add(new[] { "/testdata:" }, "local path to a log file");
 
             var spy = new AgentSpy();
+            Console.ForegroundColor = ConsoleColor.Gray;
 
             //spy.ScanVSTTAgentProcess();
             //spy.ScanVSTTAgentProcess_ColorByJobId();
@@ -34,13 +35,13 @@ namespace agentspy.net
         {
             new InfoItem("linenr", "", "{0,7}") {MarkChanges = false},
                 
-            new InfoItem("procid", "", "{0,7}", new [] { new Regex(@"^., (\d+),"),}) {MarkChanges = false},
+            new InfoItem("procid", "", "{0,7}", new [] { new Regex(@"^., (\d+),.*StateMachine"),}) {MarkChanges = false},
 
-            new InfoItem("jobid", "", "{0,4}", new [] { new Regex(@"^., \d+, (\d+),"),}) {MarkChanges = false},
+            new InfoItem("jobid", "", "{0,4}", new [] { new Regex(@"^., \d+, (\d+),.*StateMachine"),}) {MarkChanges = false},
 
-            new InfoItem("datum", "", "{0,-10}", new [] { new Regex(@"\d+, (\d{4}/\d{1,2}/\d{1,2}),"),}) {MarkChanges = false},
+            new InfoItem("datum", "", "{0,-10}", new [] { new Regex(@"\d+, (\d{4}/\d{1,2}/\d{1,2}),.*StateMachine"),}) {MarkChanges = false},
 
-            new InfoItem("time", "", "{0,10}", new [] { new Regex(@"\d+, (\d{2}:\d{2}:\d{2}.\d{3}),"), }) {MarkChanges = false},
+            new InfoItem("time", "", "{0,10}", new [] { new Regex(@"\d+, (\d{2}:\d{2}:\d{2}.\d{3}),.*StateMachine"), }) {MarkChanges = false},
 
             new StateItem("state", "n/a", "{0,-17}", new[] { new Regex("SetNextState (.*) ")}) { MarkChanges = false },
 
@@ -189,7 +190,7 @@ namespace agentspy.net
                 foreach (var job in jobs)
                 {
                     Console.WriteLine(job.jobid);
-                    foreach (var line in job.lines)
+                    foreach (var line in job.lines.Where(l => !string.IsNullOrEmpty(l["state"].Trim())))
                     {
                         Console.WriteLine("\t{0} {1} {2} {3} {4}", line["linenr"], line["time"], line["state"], line["assembly"], line["tc"]);
                     }
