@@ -26,11 +26,15 @@ namespace agentspy.net
             Console.ReadKey();
         }
 
-
     }
 
     class AgentSpy
     {
+        public static readonly string[] IsRunningStates = new[] { "started", "running", "completed", "disposed" };
+        public static bool IsRunning(string state) { return IsRunningStates.Any(irs => 0 == string.Compare(irs, state, true)); }
+        public static readonly string[] IsMakingEnvStates = new[] { "runsetupscript", "runcleanupscript" };
+        public static bool IsMakingEnvironment(string state) { return IsMakingEnvStates.Any(es => 0 == string.Compare(es, state, true)); }
+
         private List<InfoItem> fields = new List<InfoItem>()
         {
             new InfoItem("linenr", "", "{0,7}") {MarkChanges = false},
@@ -43,7 +47,7 @@ namespace agentspy.net
 
             new InfoItem("time", "", "{0,10}", new [] { new Regex(@"\d+, (\d{2}:\d{2}:\d{2}.\d{3}),.*StateMachine"), }) {MarkChanges = false},
 
-            new StateItem("state", "n/a", "{0,-17}", new[] { new Regex("SetNextState (.*) ")}) { MarkChanges = false },
+            new StateItem("state", "n/a", "{0,-17}", new[] { new Regex("calling state handler for (.*)")}) { MarkChanges = false },
 
             new InfoItem("build", "n/a", "{0,-50}", new[] { new Regex("logDirGuardedExec=.*\\\\(.*)\\\\logs") })
             {UndefinedInStatus = new List<string>(){"Online", "Deploying"}},
@@ -51,7 +55,7 @@ namespace agentspy.net
             new InfoItem("assembly", "n/a", "{0,-50}", new[]
             {
                 new Regex("UtfTest.Storage=.*\\\\(.*).dll"),
-                //new Regex("TestAssemblies=.*([a-z,A-Z,0-9,\\.,_]*).dll(.*)")
+                new Regex("TestAssemblies=.*([a-z,A-Z,0-9,\\.,_]*).dll")
             })
             {UndefinedInStatus = new List<string>(){"Online", "Deploying"}},
 
@@ -86,117 +90,118 @@ namespace agentspy.net
                 return field;
             }
         }
-        public void ScanVSTTAgentProcess(int max = int.MaxValue)
-        {
-            using (var file = CreateNewLogReader())
-            {
-                var count = 0;
-                while (!file.EndOfStream && count++ < max)
-                {
-                    var line = file.ReadLine() ?? string.Empty;
-                    var changeHappened = fields.AsParallel().Select(f => f.Evaluate(line)).ToList();
-                    this["linenr"].Value = count.ToString();
-                    if (changeHappened.Any(c => c == true))
-                    {
-                        fields.AsParallel().Where(f =>
-                            f.UndefinedInStatus.Any(s => s == this["state"].Value)).
-                            ForAll(f => f.Value = "");
-                        Console.WriteLine(string.Join(" ", fields));
-                    }
-                }
-            }
-        }
 
-        public void ScanVSTTAgentProcess_ColorByJobId(int max = int.MaxValue)
+        public InfoItem Field(string fieldName)
         {
-            using (var file = CreateNewLogReader())
-            {
-                var count = 0;
-                var colors = new ConsoleColor[]
-                {
-                    ConsoleColor.Yellow,
-                    ConsoleColor.Red,
-                    ConsoleColor.Green,
-                    ConsoleColor.Blue,
-                    ConsoleColor.Magenta,
-                    ConsoleColor.White,
-                    ConsoleColor.DarkYellow,
-                    ConsoleColor.DarkRed,
-                    ConsoleColor.DarkGreen,
-                    ConsoleColor.DarkCyan,
-                    ConsoleColor.DarkMagenta,
-                };
-                int colorPointer = 0;
-                var jobColors = new Dictionary<string, ConsoleColor>();
-                ConsoleColor currentColor;
-                while (!file.EndOfStream && count++ < max)
-                {
-                    var line = file.ReadLine() ?? string.Empty;
-                    var changeHappened = fields.AsParallel().Select(f => f.Evaluate(line)).ToList();
-                    this["linenr"].Value = count.ToString();
-                    if (changeHappened.Any(c => c == true))
-                    {
-                        fields.AsParallel().Where(f =>
-                            f.UndefinedInStatus.Any(s => s == this["state"].Value)).
-                            ForAll(f => f.Value = "");
-                        var jobid = this["jobid"].Value;
-                        if (!string.IsNullOrEmpty(jobid))
-                        {
-                            if (!jobColors.ContainsKey(jobid))
-                            {
-                                currentColor = colors[colorPointer++ % colors.Count()];
-                                jobColors[jobid] = currentColor;
-                            }
-                            currentColor = jobColors[jobid];
-                        }
-                        else
-                        {
-                            currentColor = ConsoleColor.Gray;
-                        }
-                        Console.ForegroundColor = currentColor;
-                        Console.WriteLine("{0} {1} {2} {3}", this["jobid"], this["state"], this["assembly"], this["tc"]);
-                    }
-                }
-            }
+            var field = fields.SingleOrDefault(f => f.Name == fieldName);
+            if (field == null) throw new IndexOutOfRangeException(string.Format("There is no field like \"{0}\"", fieldName));
+            return field;
         }
 
         public class Job
         {
             public string jobid;
-            public List<Dictionary<string, string>> lines = new List<Dictionary<string,string>>();
+            public List<Dictionary<string, string>> lines = new List<Dictionary<string, string>>();
+
+            public Job(string id)
+            {
+                jobid = id;
+            }
         }
+
+        public class JobCollection
+        {
+            private List<Job> jobs = new List<Job>();
+            public Job this[string id]
+            {
+                get
+                {
+                    var result = jobs.SingleOrDefault(j => j.jobid == id);
+                    if (null == result)
+                    {
+                        result = new Job(id);
+                        jobs.Add(result);
+                    }
+                    return result;
+                }
+            }
+            public IEnumerator<Job> GetEnumerator() { return jobs.GetEnumerator(); }
+        }
+
         public void GroupByJobId(int max = int.MaxValue)
         {
             using (var file = CreateNewLogReader())
             {
                 var count = 0;
-                var jobs = new List<Job>();
+                var jobs = new JobCollection();
+                var executingJob = string.Empty;
+                var environmentJob = string.Empty;
+                Job currentJob;
                 while (!file.EndOfStream && count++ < max)
                 {
                     var line = file.ReadLine() ?? string.Empty;
+                    // reset all fields
                     fields.ForEach(f => f.Reset());
-                    var isJobLine = this["jobid"].Evaluate(line);
-                    if (!isJobLine) continue;
-                    var matches = fields.AsParallel().Select(f => f.Evaluate(line)).ToList();
-                    this["linenr"].Value = count.ToString();
-                    var currentJob = jobs.SingleOrDefault(j => j.jobid == this["jobid"].Value);
-                    if (null == currentJob)
+                    // match all fields, skip line if no field is matching
+                    if (!fields.Select(f => f.Evaluate(line)).ToList().Any()) continue;
+                    // skip line if it is neither a state nor an environment line
+                    if (new[] { "state", "assembly", "tc" }.All(field => string.IsNullOrEmpty(this[field].Value.Trim()))) continue;
+                    var state = this["state"].Value;
+                    // store job id of an executing or environment job line
+                    if (!string.IsNullOrEmpty(state))
                     {
-                        jobs.Add(new Job() { jobid = this["jobid"].Value });
-                        currentJob = jobs.Last();
+                        this["linenr"].Value = count.ToString();
+                        currentJob = jobs[this["jobid"].Value];
+                        if (IsRunning(state))
+                        {
+                            if (!string.IsNullOrEmpty(executingJob) && executingJob != currentJob.jobid)
+                            {
+                                Console.WriteLine("Cannot identify exactly one test executing job ({0} vs {1} at {2})", executingJob, currentJob.jobid, count);
+                            }
+                            executingJob = currentJob.jobid;
+                        }
+                        else if (IsMakingEnvironment(state))
+                        {
+                            if (!string.IsNullOrEmpty(environmentJob) && environmentJob != currentJob.jobid)
+                            {
+                                Console.WriteLine("Cannot identify exactly one environment job ({0} vs {1} at {2})", environmentJob, currentJob.jobid, count);
+                            }
+                            environmentJob = currentJob.jobid;
+                        }
+                    }
+                    // transfer job id, assembly and test case data from active jobs
+                    else
+                    {
+                        var assembly = this["assembly"].Value.Trim();
+                        var tc = this["tc"].Value.Trim();
+                        if (!string.IsNullOrEmpty(tc) && executingJob != string.Empty)
+                        {
+                            this["jobid"].Value = executingJob;
+                            this["assembly"].Value = assembly;
+                        }
+                        else
+                        {
+                            if (!string.IsNullOrEmpty(assembly) && environmentJob != string.Empty)
+                            {
+                                this["jobid"].Value = environmentJob;
+                            }
+                        }
+                        currentJob = jobs[this["jobid"].Value];
+                        if (null == currentJob) continue;
                     }
                     currentJob.lines.Add(fields.ToDictionary(f => f.Name, f => f.ToString()));
                 }
                 foreach (var job in jobs)
                 {
                     Console.WriteLine(job.jobid);
-                    foreach (var line in job.lines.Where(l => !string.IsNullOrEmpty(l["state"].Trim())))
+                    foreach (var line in job.lines)
                     {
                         Console.WriteLine("\t{0} {1} {2} {3} {4}", line["linenr"], line["time"], line["state"], line["assembly"], line["tc"]);
                     }
                 }
             }
         }
+
     }
 
     public class OptionsStore
