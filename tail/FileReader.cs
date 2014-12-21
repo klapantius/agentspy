@@ -8,19 +8,19 @@ namespace tail
 {
     class FileReader : IFileReader
     {
-        private string myFileName;
+        public string FileName { get; private set; }
         private long position;
         internal IMockableFileStream myFileStream;
 
         public FileReader(string fileName)
         {
-            myFileName = fileName;
+            FileName = fileName;
             position = 0;
         }
 
         public byte[] ReadLastNBytes(long n)
         {
-            using (var fs = myFileStream ?? new MockableFileStream(myFileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            using (var fs = myFileStream ?? new MockableFileStream(FileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
                 var numberOfBytesToDisplay = n < fs.Length ? n : fs.Length;
 
@@ -37,7 +37,7 @@ namespace tail
 
         public byte[] ReadNewBytes(long max = -1)
         {
-            using (var fs = myFileStream ?? new MockableFileStream(myFileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            using (var fs = myFileStream ?? new MockableFileStream(FileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
                 // compare the size of the file to the last position
                 // and return an empty array if nothing has changed since the last read
