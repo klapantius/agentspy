@@ -73,29 +73,29 @@ namespace tail
         #endregion
 
         #region watching
-        private bool iAmRunning;
         private FileSystemWatcher fsWatcher;
 
         public void StopWatching()
         {
-            iAmRunning = false;
-
-            fsWatcher.Changed -= fsWatcher_Changed;
+            if (null != fsWatcher) fsWatcher.EnableRaisingEvents = false;
         }
 
         public void Watch()
         {
-            iAmRunning = true;
-
-            if (null != fsWatcher || iAmRunning) return;
+            if (null != fsWatcher && fsWatcher.EnableRaisingEvents) return;
 
             fsWatcher = new FileSystemWatcher(Path.GetDirectoryName(myFileReader.FileName), Path.GetFileName(myFileReader.FileName));
+            fsWatcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.LastAccess | NotifyFilters.CreationTime | NotifyFilters.Size;
             fsWatcher.Changed += fsWatcher_Changed;
+            fsWatcher.Created += fsWatcher_Changed;
+            fsWatcher.Deleted += fsWatcher_Changed;
+            fsWatcher.Renamed += fsWatcher_Changed;
+            fsWatcher.EnableRaisingEvents = true;
         }
 
         void fsWatcher_Changed(object sender, FileSystemEventArgs e)
         {
-            if (e.ChangeType != WatcherChangeTypes.Changed || e.ChangeType != WatcherChangeTypes.Created) return;
+            if (e.ChangeType != WatcherChangeTypes.Changed && e.ChangeType != WatcherChangeTypes.Created) return;
 
             var newLines = GetNewLines();
             if (newLines.Count > 0) OnChanged(new TailEventArgs(newLines));
