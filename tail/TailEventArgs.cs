@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 
 namespace tail
 {
-    class TailEventArgs
+    public class TailEventArgs
     {
         public List<string> NewLines { get; private set; }
 
