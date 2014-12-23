@@ -111,9 +111,8 @@ namespace aamcommon
                         !string.IsNullOrEmpty(myFields[Field.TC])? string.Format(" test case {0}", myFields[Field.TC]):""):""):"");
                     break;
                 case Status.Offline:
-                    return "offline";
                 case Status.Online:
-                    return "online";
+                    return status.ToString();
                 case Status.Error:
                     return myFields[Field.Error];
             }
