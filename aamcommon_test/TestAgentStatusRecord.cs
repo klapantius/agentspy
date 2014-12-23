@@ -11,12 +11,18 @@ namespace aamcommon_test
     [TestFixture]
     public class TestAgentStatusRecordTests
     {
+        private const string TestJobId = "x";
+        private const string TestBuild = "test_build";
+        private const string TestAssembly = "test.assembly.dll";
+
         [TestCase]
-        public void InitialStatusIsNA()
+        public void InitialStatusIsNAAndFieldsAreEmpty()
         {
             var r = new TestAgentStatusRecord();
 
-            Assert.AreEqual(Status.NA.ToString(),r[Field.Status], "Unexpected initial status");
+            Assert.AreEqual(Status.NA.ToString(),r[Field.Status], "Unexpected initial status.");
+            //(IEnumerable<Field>)Enum.GetValues(typeof(Field))
+            Assert.IsTrue(string.IsNullOrEmpty(r[Field.Build]), "Build should be empty.");
         }
 
         [TestCase]
@@ -24,7 +30,7 @@ namespace aamcommon_test
         {
             var r = new TestAgentStatusRecord();
             var expectedContent = ExpectedContent(Field.Status, Status.Offline.ToString());
-            r.Update("x", new Dictionary<Field, string>()
+            r.Update(TestJobId, new Dictionary<Field, string>()
             {
                 {Field.Status, Status.Offline.ToString()}
             });
@@ -41,7 +47,19 @@ namespace aamcommon_test
             StringAssert.AreEqualIgnoringCase(Status.Offline.ToString(), r[Field.Status], "Unexpected status filed value after StatusString changed.");
         }
 
-        private string ExpectedContent(Field field, string value)
+        //[TestCase]
+        //public void TransitionSetupToTestExecutionTakesBuildAndAssemblyInfo()
+        //{
+        //    var r = new TestAgentStatusRecord();
+        //    r.Update(TestJobId, new Dictionary<Field, string>()
+        //    {
+        //        {Field.Status, Status.Online.ToString()},
+        //        {Field.Build, TestBuild},
+        //        {Field.Assembly, TestAssembly}
+        //    });
+        //}
+
+        private static string ExpectedContent(Field field, string value)
         {
             return string.Format("{0}{1}{2}", field.ToString(), TestAgentStatusRecord.FieldValueSeparator, value);
         }
