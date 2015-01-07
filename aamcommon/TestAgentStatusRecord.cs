@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 [assembly: InternalsVisibleTo("aamcommon_test")]
 
@@ -38,7 +37,7 @@ namespace aamcommon
 
         public string this[Field f]
         {
-            get { return myFields[f]; }
+            get { return myFields.ContainsKey(f) ? myFields[f] : string.Empty; }
             private set { myFields[f] = value; }
         }
 
@@ -106,9 +105,9 @@ namespace aamcommon
                 case Status.Cleanup:
                 case Status.TestExecution:
                     return string.Format("{0} is running{1}.", status,
-                        !string.IsNullOrEmpty(myFields[Field.Build])? string.Format(" for build {0}{1}", myFields[Field.Build],
-                        !string.IsNullOrEmpty(myFields[Field.Assembly])? string.Format(" assembly {0}{1}", myFields[Field.Assembly],
-                        !string.IsNullOrEmpty(myFields[Field.TC])? string.Format(" test case {0}", myFields[Field.TC]):""):""):"");
+                        !string.IsNullOrEmpty(myFields[Field.Build]) ? string.Format(" for build {0}{1}", myFields[Field.Build],
+                        !string.IsNullOrEmpty(myFields[Field.Assembly]) ? string.Format(" assembly {0}{1}", myFields[Field.Assembly],
+                        !string.IsNullOrEmpty(myFields[Field.TC]) ? string.Format(" test case {0}", myFields[Field.TC]) : "") : "") : "");
                     break;
                 case Status.Offline:
                 case Status.Online:

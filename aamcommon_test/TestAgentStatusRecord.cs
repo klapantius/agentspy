@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using aamcommon;
+﻿using aamcommon;
 using NUnit.Framework;
+using System.Collections.Generic;
 
 namespace aamcommon_test
 {
@@ -16,12 +12,11 @@ namespace aamcommon_test
         private const string TestAssembly = "test.assembly.dll";
 
         [TestCase]
-        public void InitialStatusIsNAAndFieldsAreEmpty()
+        public void InitialStatusIsNaAndFieldsAreEmpty()
         {
             var r = new TestAgentStatusRecord();
 
-            Assert.AreEqual(Status.NA.ToString(),r[Field.Status], "Unexpected initial status.");
-            //(IEnumerable<Field>)Enum.GetValues(typeof(Field))
+            Assert.AreEqual(Status.NA.ToString(), r[Field.Status], "Unexpected initial status.");
             Assert.IsTrue(string.IsNullOrEmpty(r[Field.Build]), "Build should be empty.");
         }
 
