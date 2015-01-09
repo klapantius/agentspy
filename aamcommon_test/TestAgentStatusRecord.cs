@@ -16,7 +16,7 @@ namespace aamcommon_test
         {
             var r = new TestAgentStatusRecord();
 
-            Assert.AreEqual(Status.NA.ToString(), r[Field.Status], "Unexpected initial status.");
+            Assert.AreEqual(AgentStatus.NA.ToString(), r[Field.Status], "Unexpected initial status.");
             Assert.IsTrue(string.IsNullOrEmpty(r[Field.Build]), "Build should be empty.");
         }
 
@@ -24,10 +24,10 @@ namespace aamcommon_test
         public void UpdateOfStatusFieldResultsInChangeOfStatusString()
         {
             var r = new TestAgentStatusRecord();
-            var expectedContent = ExpectedContent(Field.Status, Status.Offline.ToString());
+            var expectedContent = ExpectedContent(Field.Status, AgentStatus.Offline.ToString());
             r.Update(TestJobId, new Dictionary<Field, string>()
             {
-                {Field.Status, Status.Offline.ToString()}
+                {Field.Status, AgentStatus.Offline.ToString()}
             });
             StringAssert.Contains(expectedContent, r.StatusString, "Wrong or missing status in StatusString.");
         }
@@ -37,9 +37,9 @@ namespace aamcommon_test
         {
             var r = new TestAgentStatusRecord()
             {
-                StatusString = ExpectedContent(Field.Status, Status.Offline.ToString())
+                StatusString = ExpectedContent(Field.Status, AgentStatus.Offline.ToString())
             };
-            StringAssert.AreEqualIgnoringCase(Status.Offline.ToString(), r[Field.Status], "Unexpected status filed value after StatusString changed.");
+            StringAssert.AreEqualIgnoringCase(AgentStatus.Offline.ToString(), r[Field.Status], "Unexpected status filed value after StatusString changed.");
         }
 
         //[TestCase]

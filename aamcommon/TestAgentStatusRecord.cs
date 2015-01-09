@@ -8,8 +8,8 @@ using System.Runtime.CompilerServices;
 
 namespace aamcommon
 {
-    public enum Status { NA, Offline, Setup, TestExecution, Cleanup, Online, Error }
-    public enum Field { Status, Build, Assembly, TC, Error }
+    public enum AgentStatus { NA, Offline, Setup, TestExecution, Cleanup, Online, Error }
+    public enum Field { Status, Build, Assembly, TC, Error, LastUpdated }
 
     /// <summary>
     /// a collection of status fields. The values may be reached via the indexer.
@@ -46,7 +46,7 @@ namespace aamcommon
             Enum.GetNames(typeof(Field)).ToList().ForEach(f => myFields.Add((Field)Enum.Parse(typeof(Field), f), string.Empty));
             Update(string.Empty, new Dictionary<Field, string>()
             {
-                {Field.Status, Status.NA.ToString()}
+                {Field.Status, AgentStatus.NA.ToString()}
             });
         }
 
@@ -95,24 +95,24 @@ namespace aamcommon
 
         public override string ToString()
         {
-            Status status;
+            AgentStatus status;
             Enum.TryParse(myFields[Field.Status], false, out status);
             switch (status)
             {
-                case Status.NA:
+                case AgentStatus.NA:
                     return "no information";
-                case Status.Setup:
-                case Status.Cleanup:
-                case Status.TestExecution:
+                case AgentStatus.Setup:
+                case AgentStatus.Cleanup:
+                case AgentStatus.TestExecution:
                     return string.Format("{0} is running{1}.", status,
                         !string.IsNullOrEmpty(myFields[Field.Build]) ? string.Format(" for build {0}{1}", myFields[Field.Build],
                         !string.IsNullOrEmpty(myFields[Field.Assembly]) ? string.Format(" assembly {0}{1}", myFields[Field.Assembly],
                         !string.IsNullOrEmpty(myFields[Field.TC]) ? string.Format(" test case {0}", myFields[Field.TC]) : "") : "") : "");
                     break;
-                case Status.Offline:
-                case Status.Online:
+                case AgentStatus.Offline:
+                case AgentStatus.Online:
                     return status.ToString();
-                case Status.Error:
+                case AgentStatus.Error:
                     return myFields[Field.Error];
             }
             return base.ToString();

@@ -1,10 +1,16 @@
-﻿using tail;
+﻿using System.Collections.Generic;
+using aamcommon;
+using tail;
 
 namespace aamws
 {
     interface IJob
     {
-        void Update(string status, string build, string assembly, string tc);
+        string Id { get; }
+        JobStatus Status { get; }
+        string Error { get; }
+
+        void Update(Dictionary<Field, string> fieldsToBeUpdated);
     }
 
     interface IJobFactory

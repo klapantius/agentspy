@@ -30,6 +30,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="nunit.framework">
+      <HintPath>..\packages\NUnit.2.6.4\lib\nunit.framework.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -42,6 +45,19 @@
     <Compile Include="ChangeAnalyzer.cs" />
     <Compile Include="Job.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\aamcommon\aamcommon.csproj">
+      <Project>{0b906f34-3a71-49c1-aa88-92230c9e9d5c}</Project>
+      <Name>aamcommon</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\aamws\aamws.csproj">
+      <Project>{03dee3e4-2971-464a-aa46-09c012c29dd4}</Project>
+      <Name>aamws</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

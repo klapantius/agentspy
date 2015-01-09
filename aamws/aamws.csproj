@@ -45,6 +45,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\aamcommon\aamcommon.csproj">
+      <Project>{0b906f34-3a71-49c1-aa88-92230c9e9d5c}</Project>
+      <Name>aamcommon</Name>
+    </ProjectReference>
     <ProjectReference Include="..\tail\tail.csproj">
       <Project>{fe6a1f13-a9c5-4410-9d97-74e09426faee}</Project>
       <Name>tail</Name>
