@@ -39,9 +39,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ChangeAnalyzer.cs" />
+    <Compile Include="LogParser.cs" />
     <Compile Include="Interfaces.cs" />
     <Compile Include="Job.cs" />
+    <Compile Include="LogParserRule.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

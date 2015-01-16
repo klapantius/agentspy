@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using aamcommon;
 
 namespace aamws
 {
-    public enum JobStatus { Na, Setup, TestExecution, Cleanup, Finished}
+    public enum JobStatus { Na, Setup, TestExecution, Cleanup, Finished }
 
     public class Job : IJob
     {
@@ -31,7 +32,7 @@ namespace aamws
                 if (EnabledStatusTransitions.ContainsKey(Status) &&
                     EnabledStatusTransitions[Status].All(s => s != value))
                 {
-                    myFields[aamcommon.Field.Error]=string.Format("Unexpected status transition: {0} => {1}", Status, value);
+                    myFields[aamcommon.Field.Error] = string.Format("Unexpected status transition: {0} => {1}", Status, value);
                 }
                 myFields[aamcommon.Field.Status] = value.ToString();
             }
@@ -52,9 +53,9 @@ namespace aamws
         {
             foreach (var update in fieldsToBeUpdated)
             {
-                if (update.Key==aamcommon.Field.Status)
+                if (update.Key == aamcommon.Field.Status)
                 {
-                    Status = (JobStatus)Enum.Parse(typeof (JobStatus), update.Value);
+                    Status = (JobStatus)Enum.Parse(typeof(JobStatus), update.Value);
                 }
                 else
                 {

@@ -30,6 +30,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Moq">
+      <HintPath>..\packages\Moq.4.2.1409.1722\lib\net40\Moq.dll</HintPath>
+    </Reference>
     <Reference Include="nunit.framework">
       <HintPath>..\packages\NUnit.2.6.4\lib\nunit.framework.dll</HintPath>
     </Reference>
@@ -42,8 +45,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ChangeAnalyzer.cs" />
+    <Compile Include="LogParser.cs" />
     <Compile Include="Job.cs" />
+    <Compile Include="LogParserRule.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -57,6 +61,10 @@
     <ProjectReference Include="..\aamws\aamws.csproj">
       <Project>{03dee3e4-2971-464a-aa46-09c012c29dd4}</Project>
       <Name>aamws</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\tail\tail.csproj">
+      <Project>{fe6a1f13-a9c5-4410-9d97-74e09426faee}</Project>
+      <Name>tail</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

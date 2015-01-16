@@ -9,7 +9,7 @@ using System.Runtime.CompilerServices;
 namespace aamcommon
 {
     public enum AgentStatus { NA, Offline, Setup, TestExecution, Cleanup, Online, Error }
-    public enum Field { Status, Build, Assembly, TC, Error, LastUpdated }
+    public enum Field { Status, Build, Assembly, TC, Error, LastUpdated, JobId }
 
     /// <summary>
     /// a collection of status fields. The values may be reached via the indexer.

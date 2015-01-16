@@ -6,7 +6,7 @@ using System.Text;
 
 namespace tail
 {
-    class Tail : ITail
+    public class Tail : ITail
     {
         internal IFileReader myFileReader;
         internal Encoding myFileType = Encoding.Default;
@@ -61,7 +61,6 @@ namespace tail
         }
 
         #region changed event
-        public delegate void ChangedEventHandler(object sender, TailEventArgs e);
         public event ChangedEventHandler Changed;
 
         protected virtual void OnChanged(TailEventArgs e)

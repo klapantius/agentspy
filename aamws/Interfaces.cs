@@ -1,10 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using aamcommon;
 using tail;
 
 namespace aamws
 {
-    interface IJob
+    public interface IJob
     {
         string Id { get; }
         JobStatus Status { get; }
@@ -18,9 +19,19 @@ namespace aamws
         IJob Create(string id);
     }
 
-    interface IChangeAnalyzer
+    public interface ILogParser : IDisposable
     {
         void TailUpdateHandler(object o, TailEventArgs e);
         void Remove(string jobid);
     }
+
+    public interface ILogParserRule
+    {
+        string Rule { get; }
+
+        bool IsMatching(string line);
+        Dictionary<Field, string> Parse(string line);
+    }
+
+
 }

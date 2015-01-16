@@ -7,8 +7,11 @@ using System.Runtime.CompilerServices;
 
 namespace tail
 {
-    interface ITail
+    public delegate void ChangedEventHandler(object sender, TailEventArgs e);
+    
+    public interface ITail
     {
+        event ChangedEventHandler Changed;
         List<string> GetNewLines();
     }
 

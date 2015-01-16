@@ -24,8 +24,9 @@ namespace aamws_test
         [TestCase]
         public void EnabledStatusTransitionsGetThrough()
         {
-            var job = new Job(TestJobId);
+            Console.WriteLine("EnabledStatusTransitionsGetThrough()");
 
+            var job = new Job(TestJobId);
             foreach (var enabledStatusTransition in Job.EnabledStatusTransitions)
             {
                 var fromState = enabledStatusTransition.Key;
@@ -36,7 +37,7 @@ namespace aamws_test
                         {Field.Status, fromState.ToString()},
                         {Field.Error, string.Empty}
                     });
-                    Console.WriteLine("{0} => {1}", job.Field(Field.Status), toState);
+                    Console.WriteLine("\t{0} => {1}", job.Field(Field.Status), toState);
                     job.Update(new Dictionary<Field, string>() { { Field.Status, toState.ToString() } });
                     Assert.AreEqual(toState.ToString(), job.Field(Field.Status), "Unexpected result of job.Field(Status) after a transition from {0} to {1}.", fromState, toState);
                     StringAssert.AreEqualIgnoringCase(string.Empty, job.Field(Field.Error), "Unexpected error after a transition from {0} to {1}.", fromState, toState);
@@ -47,6 +48,8 @@ namespace aamws_test
         [TestCase]
         public void UnexpectedStatusTransitionsEndUpInError()
         {
+            Console.WriteLine("UnexpectedStatusTransitionsEndUpInError()");
+
             var job = new Job(TestJobId);
 
             foreach (var f in Enum.GetValues(typeof(JobStatus)))
@@ -66,10 +69,25 @@ namespace aamws_test
                         {Field.Status, fromState.ToString()},
                         {Field.Error, string.Empty}
                     });
-                    Console.WriteLine("{0} => {1}", job.Field(Field.Status), toState);
+                    Console.WriteLine("\t{0} => {1}", job.Field(Field.Status), toState);
                     job.Update(new Dictionary<Field, string>() { { Field.Status, toState.ToString() } });
                     StringAssert.AreNotEqualIgnoringCase(string.Empty, job.Field(Field.Error), "No error after a transition from {0} to {1}.", fromState, toState);
                 }
+            }
+        }
+
+        [TestCase]
+        public void AnyChangeWillBeTakenAsItIs()
+        {
+            var job = new Job(TestJobId);
+
+            foreach (var f in Enum.GetValues(typeof(Field)))
+            {
+                var field = (Field)f;
+                if (field == Field.Status) continue;
+                var newValue = string.Format("{0}_{1}", field, DateTime.Now.ToString("HH:mm:ss,fff"));
+                job.Update(new Dictionary<Field, string>() { { field, newValue } });
+                StringAssert.AreEqualIgnoringCase(newValue, job.Field(field), "Unexpected field value after update.");
             }
         }
 
