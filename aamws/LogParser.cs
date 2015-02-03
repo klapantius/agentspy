@@ -18,7 +18,8 @@ namespace aamws
         public static readonly List<ILogParserRule> Rules = new List<ILogParserRule>()
         {
             new LogParserRule(
-                @"\w, \d*, (?<" + Field.JobId + @">\d*), " +
+                @"(?<" + Field.LogType + @"\w)" +
+                @", \d*, (?<" + Field.JobId + @">\d*), " +
                 @"(?<" + Field.LastUpdated + @">\d*/\d*/\d*, \d*:\d*:\d*.\d*), " +
                 @".*.exe, StateMachine\(AgentState\): calling state handler for (?<" + Field.Status + @">.*)"),
             new LogParserRule(@"^TestAssemblies=(?<" + Field.Assembly + @">.*)$"),

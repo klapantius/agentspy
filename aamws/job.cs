@@ -6,10 +6,35 @@ using aamcommon;
 
 namespace aamws
 {
-    public enum JobStatus { Na, Setup, TestExecution, Cleanup, Finished }
+    public enum JobStatus
+    {
+        Na,
+        Setup,
+        TestExecution,
+        Cleanup,
+        Finished
+    }
 
     public class Job : IJob
     {
+        public static Dictionary<StateMachine, JobStatus> FineToUsed = new Dictionary<StateMachine, JobStatus>()
+        {
+            {StateMachine.Queuing, JobStatus.Setup},
+            {StateMachine.Deploying, JobStatus.Setup},
+            {StateMachine.Deployed, JobStatus.Setup},
+            {StateMachine.RunSetupScript, JobStatus.Setup},
+            {StateMachine.InitializeDataCollectors, JobStatus.Setup},
+            {StateMachine.Synchronizing, JobStatus.TestExecution},
+            {StateMachine.Starting, JobStatus.TestExecution},
+            {StateMachine.Running, JobStatus.TestExecution},
+            {StateMachine.Completing, JobStatus.TestExecution},
+            {StateMachine.Waiting, JobStatus.TestExecution},
+            {StateMachine.CleanupDataCollectors, JobStatus.Cleanup},
+            {StateMachine.RunCleanupScript, JobStatus.Cleanup},
+            {StateMachine.Cleanup, JobStatus.Cleanup},
+            {StateMachine.RunCompleted, JobStatus.Finished},
+            {StateMachine.Online, JobStatus.Finished},
+        };
         public static readonly Dictionary<JobStatus, List<JobStatus>> EnabledStatusTransitions =
             new Dictionary<JobStatus, List<JobStatus>>()
             {

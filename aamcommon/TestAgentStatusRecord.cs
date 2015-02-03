@@ -8,8 +8,27 @@ using System.Runtime.CompilerServices;
 
 namespace aamcommon
 {
+    public enum StateMachine
+    {
+        Queuing,
+        Deploying,
+        Deployed,
+        RunSetupScript,
+        InitializeDataCollectors,
+        Synchronizing,
+        Starting,
+        Running,
+        Completing,
+        Waiting,
+        CleanupDataCollectors,
+        RunCleanupScript,
+        Cleanup,
+        RunCompleted,
+        Online,
+    }
+
     public enum AgentStatus { NA, Offline, Setup, TestExecution, Cleanup, Online, Error }
-    public enum Field { Status, Build, Assembly, TC, Error, LastUpdated, JobId }
+    public enum Field { LogType, Status, Build, Assembly, TC, Error, LastUpdated, JobId }
 
     /// <summary>
     /// a collection of status fields. The values may be reached via the indexer.
