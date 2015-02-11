@@ -13,6 +13,8 @@ namespace tail
     {
         event ChangedEventHandler Changed;
         List<string> GetNewLines();
+        void Watch();
+        void StopWatching();
     }
 
     interface IFileReader

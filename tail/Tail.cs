@@ -10,6 +10,7 @@ namespace tail
     {
         internal IFileReader myFileReader;
         internal Encoding myFileType = Encoding.Default;
+        internal bool encodingDetected = false;
 
         public Tail(string fileName, Encoding fileType)
         {
@@ -19,32 +20,43 @@ namespace tail
                 myFileType = fileType;
             }
             else try
-                {
-                    var b = myFileReader.ReadNewBytes(2);
+            {
+                DetectEncoding();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                myFileType = Encoding.ASCII;
+            }
+        }
 
-                    if (b[0] == 255 && b[1] == 254)
-                    {
-                        myFileType = Encoding.Unicode;
-                    }
-                    else if (b[0] == 239 && b[1] == 187)
-                    {
-                        myFileType = Encoding.UTF8;
-                    }
-                    else if (b[0] == 254 && b[1] == 255)
-                    {
-                        myFileType = Encoding.BigEndianUnicode;
-                    }
-                    else
-                    {
-                        myFileType = Encoding.ASCII;
-                        myFileReader.ResetPosition();
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.Message);
-                    myFileType = Encoding.ASCII;
-                }
+        private void DetectEncoding()
+        {
+            var b = myFileReader.ReadNewBytes(2);
+            if (b == null || b.Length < 2)
+            {
+                myFileReader.ResetPosition();
+                return;
+            }
+
+            if (b[0] == 255 && b[1] == 254)
+            {
+                myFileType = Encoding.Unicode;
+            }
+            else if (b[0] == 239 && b[1] == 187)
+            {
+                myFileType = Encoding.UTF8;
+            }
+            else if (b[0] == 254 && b[1] == 255)
+            {
+                myFileType = Encoding.BigEndianUnicode;
+            }
+            else
+            {
+                myFileType = Encoding.ASCII;
+                myFileReader.ResetPosition();
+            }
+            encodingDetected = true;
         }
 
         public List<string> GetNewLines()
@@ -83,7 +95,9 @@ namespace tail
         {
             if (null != fsWatcher && fsWatcher.EnableRaisingEvents) return;
 
-            fsWatcher = new FileSystemWatcher(Path.GetDirectoryName(myFileReader.FileName), Path.GetFileName(myFileReader.FileName));
+            var dir = Path.GetDirectoryName(myFileReader.FileName);
+            if (string.IsNullOrEmpty(dir)) dir = Environment.CurrentDirectory;
+            fsWatcher = new FileSystemWatcher(dir, Path.GetFileName(myFileReader.FileName));
             fsWatcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.LastAccess | NotifyFilters.CreationTime | NotifyFilters.Size;
             fsWatcher.Changed += fsWatcher_Changed;
             fsWatcher.Created += fsWatcher_Changed;
@@ -95,6 +109,11 @@ namespace tail
         void fsWatcher_Changed(object sender, FileSystemEventArgs e)
         {
             if (e.ChangeType != WatcherChangeTypes.Changed && e.ChangeType != WatcherChangeTypes.Created) return;
+            if (!encodingDetected)
+            {
+                DetectEncoding();
+                if (!encodingDetected) return;
+            }
 
             var newLines = GetNewLines();
             if (newLines.Count > 0) OnChanged(new TailEventArgs(newLines));

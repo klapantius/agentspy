@@ -1,10 +1,9 @@
-﻿using System;
+﻿using aamcommon;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
-using System.Text.RegularExpressions;
-using aamcommon;
 using tail;
 
 [assembly: InternalsVisibleTo("aamws_test")]
@@ -14,11 +13,12 @@ namespace aamws
     public class LogParser : ILogParser
     {
         public const string FileNameOfAgentLog = "VSTTAgentProcess.log";
+        private string lastJobId = null;
 
         public static readonly List<ILogParserRule> Rules = new List<ILogParserRule>()
         {
             new LogParserRule(
-                @"(?<" + Field.LogType + @"\w)" +
+                @"(?<" + Field.LogType + @">\w)" +
                 @", \d*, (?<" + Field.JobId + @">\d*), " +
                 @"(?<" + Field.LastUpdated + @">\d*/\d*/\d*, \d*:\d*:\d*.\d*), " +
                 @".*.exe, StateMachine\(AgentState\): calling state handler for (?<" + Field.Status + @">.*)"),
@@ -39,11 +39,13 @@ namespace aamws
             if (null == Tail) Tail = new Tail(FileNameOfAgentLog, Encoding.Default);
 
             Tail.Changed += TailUpdateHandler;
+            Tail.Watch();
         }
 
         private void Stop()
         {
             Tail.Changed -= TailUpdateHandler;
+            Tail.StopWatching();
             Tail = null;
         }
 
@@ -53,6 +55,15 @@ namespace aamws
             Jobs.Clear();
         }
 
+        #region changed event
+        public event LogParserEventHandler Changed;
+
+        protected virtual void OnChanged(string jobid, Dictionary<Field, string> fieldsToBeUpdated)
+        {
+            if (Changed != null) Changed(jobid, fieldsToBeUpdated);
+        }
+
+        #endregion
         public void TailUpdateHandler(object o, TailEventArgs e)
         {
             foreach (var line in e.NewLines)
@@ -60,18 +71,20 @@ namespace aamws
                 var matching = Rules.SingleOrDefault(r => r.IsMatching(line));
                 if (null == matching) continue;
                 var result = matching.Parse(line);
-                if (!string.IsNullOrEmpty(result[Field.JobId]))
+                var jobid = result.ContainsKey(Field.JobId) ? result[Field.JobId] : "";
+                if (!string.IsNullOrEmpty(jobid))
                 {
-                    if (Jobs.All(j => j.Id != result[Field.JobId]))
-                    {
-                        var newJob = new Job(result[Field.JobId]);
-                        newJob.Update(result);
-                        Jobs.Add(newJob);
-                    }
+                    var job = Jobs.SingleOrDefault(j => j.Id == jobid);
+                    if (job == null) Jobs.Add(job = new Job(jobid));
+                    job.Update(result);
+                    lastJobId = jobid;
+                    OnChanged(jobid, result);
                 }
                 else
                 {
-
+                    if (string.IsNullOrEmpty(lastJobId)) continue;
+                    Jobs.Single(j => j.Id == lastJobId).Update(result);
+                    OnChanged(jobid, result);
                 }
             }
         }

@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "aamcommon", "aamcommon\aamc
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "aamcommon_test", "aamcommon_test\aamcommon_test.csproj", "{04CCC260-FF99-4779-AB83-63DD7196AB21}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AgentMonitorLocal_prototype", "AgentMonitorLocal\AgentMonitorLocal_prototype.csproj", "{8E1B347D-C46B-4C80-88A0-AE9F39E29AC6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,6 +53,10 @@ Global
 		{04CCC260-FF99-4779-AB83-63DD7196AB21}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{04CCC260-FF99-4779-AB83-63DD7196AB21}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{04CCC260-FF99-4779-AB83-63DD7196AB21}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8E1B347D-C46B-4C80-88A0-AE9F39E29AC6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8E1B347D-C46B-4C80-88A0-AE9F39E29AC6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8E1B347D-C46B-4C80-88A0-AE9F39E29AC6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8E1B347D-C46B-4C80-88A0-AE9F39E29AC6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

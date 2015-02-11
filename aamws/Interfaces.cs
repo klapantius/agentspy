@@ -19,8 +19,12 @@ namespace aamws
         IJob Create(string id);
     }
 
+    public delegate void LogParserEventHandler(string jobid, Dictionary<Field, string> fieldsToBeUpdated);
+
     public interface ILogParser : IDisposable
     {
+        event LogParserEventHandler Changed;
+
         void TailUpdateHandler(object o, TailEventArgs e);
         void Remove(string jobid);
     }

@@ -80,7 +80,7 @@ namespace aamws
             {
                 if (update.Key == aamcommon.Field.Status)
                 {
-                    Status = (JobStatus)Enum.Parse(typeof(JobStatus), update.Value);
+                    Status =  FineToUsed[(StateMachine)Enum.Parse(typeof(StateMachine),update.Value)];
                 }
                 else
                 {

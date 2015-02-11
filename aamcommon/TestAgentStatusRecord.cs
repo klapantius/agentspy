@@ -81,6 +81,7 @@ namespace aamcommon
                 Where(f => !string.IsNullOrEmpty(f.Value)).
                 Select(f => string.Join(FieldValueSeparator, new[] { f.Key.ToString(), f.Value })).
                 ToArray());
+            //OnChanged(ToString());
         }
 
         private void UpdateFields(Dictionary<Field, string> fieldsToBeUpdated)
@@ -124,10 +125,9 @@ namespace aamcommon
                 case AgentStatus.Cleanup:
                 case AgentStatus.TestExecution:
                     return string.Format("{0} is running{1}.", status,
-                        !string.IsNullOrEmpty(myFields[Field.Build]) ? string.Format(" for build {0}{1}", myFields[Field.Build],
-                        !string.IsNullOrEmpty(myFields[Field.Assembly]) ? string.Format(" assembly {0}{1}", myFields[Field.Assembly],
-                        !string.IsNullOrEmpty(myFields[Field.TC]) ? string.Format(" test case {0}", myFields[Field.TC]) : "") : "") : "");
-                    break;
+                        myFields.ContainsKey(Field.Build) ? string.Format(" for build {0}{1}", myFields[Field.Build],
+                        myFields.ContainsKey(Field.Assembly) ? string.Format(" assembly {0}{1}", myFields[Field.Assembly],
+                        myFields.ContainsKey(Field.TC) ? string.Format(" test case {0}", myFields[Field.TC]) : "") : "") : "");
                 case AgentStatus.Offline:
                 case AgentStatus.Online:
                     return status.ToString();
