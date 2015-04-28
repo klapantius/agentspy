@@ -22,8 +22,9 @@ namespace aamws
                 @", \d*, (?<" + Field.JobId + @">\d*), " +
                 @"(?<" + Field.LastUpdated + @">\d*/\d*/\d*, \d*:\d*:\d*.\d*), " +
                 @".*.exe, StateMachine\(AgentState\): calling state handler for (?<" + Field.Status + @">.*)"),
-            new LogParserRule(@"^TestAssemblies=(?<" + Field.Assembly + @">.*)$"),
-            new LogParserRule(@"HumanReadableId=.(?<" + Field.TC + @">.*)., Id=")
+            new LogParserRule(@"^TestAssemblies=(?<" + Field.Assembly + @">[\d\w\._]+)\.dll$"),
+            new LogParserRule(@"HumanReadableId=.(?<" + Field.TC + @">.*)., Id="),
+            new LogParserRule(@"logDirGuardedExec=.*tfssysint\$\\(?<" + Field.Build + @">.*)\\logs"),
         };
 
         internal ITail Tail { get; set; }
@@ -77,6 +78,7 @@ namespace aamws
                     var job = Jobs.SingleOrDefault(j => j.Id == jobid);
                     if (job == null) Jobs.Add(job = new Job(jobid));
                     job.Update(result);
+                    if (result.ContainsKey(Field.Status)) result[Field.Status] = job.Status.ToString();
                     lastJobId = jobid;
                     OnChanged(jobid, result);
                 }

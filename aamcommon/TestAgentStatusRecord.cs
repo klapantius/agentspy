@@ -25,9 +25,11 @@ namespace aamcommon
         Cleanup,
         RunCompleted,
         Online,
+        Aborting,
+        Stopping,
     }
 
-    public enum AgentStatus { NA, Offline, Setup, TestExecution, Cleanup, Online, Error }
+    public enum AgentStatus { NA, Offline, Setup, TestExecution, Cleanup, Online, Finished = Online, Error }
     public enum Field { LogType, Status, Build, Assembly, TC, Error, LastUpdated, JobId }
 
     /// <summary>
@@ -36,6 +38,17 @@ namespace aamcommon
     /// </summary>
     public class TestAgentStatusRecord
     {
+        private static readonly Dictionary<AgentStatus, List<Field>> NeededFields = new Dictionary<AgentStatus, List<Field>>()
+        {
+            {AgentStatus.NA, new List<Field>()},
+            {AgentStatus.Offline, new List<Field>()},
+            {AgentStatus.Online, new List<Field>()},
+            {AgentStatus.Setup, new List<Field>(){Field.Build, Field.Assembly}},
+            {AgentStatus.TestExecution, new List<Field>(){Field.Build, Field.Assembly, Field.TC}},
+            {AgentStatus.Cleanup, new List<Field>(){Field.Build, Field.Assembly}},
+            {AgentStatus.Error, new List<Field>(){Field.Error}},
+        };
+
         #region changed event
         public delegate void ChangedEventHandler(object sender, string e);
         public event ChangedEventHandler Changed;
@@ -53,6 +66,7 @@ namespace aamcommon
 
         private string activeJob;
         private readonly Dictionary<Field, string> myFields = new Dictionary<Field, string>();
+        private AgentStatus myStatus { get { return (AgentStatus)Enum.Parse(typeof(AgentStatus), myFields[Field.Status], true); } }
 
         public string this[Field f]
         {
@@ -86,10 +100,18 @@ namespace aamcommon
 
         private void UpdateFields(Dictionary<Field, string> fieldsToBeUpdated)
         {
-            myFields.Clear();
+            //myFields.Clear();
+
+            // apply incoming changes
             foreach (var field in fieldsToBeUpdated)
             {
                 myFields[field.Key] = field.Value;
+            }
+
+            // remove not needed fields
+            foreach (var field in Enum.GetValues(typeof(Field)).Cast<Field>().Where(f => f != Field.Status && NeededFields[myStatus].All(nf => nf != f)))
+            {
+                myFields[field] = string.Empty;
             }
         }
 
@@ -101,7 +123,7 @@ namespace aamcommon
             {
                 myStatusString = value;
                 var fieldsToBeUpdated = new Dictionary<Field, string>();
-                foreach (var items in myStatusString.Split(FieldFieldSeparator.ToCharArray()).Select(fvp => fvp.Split(FieldValueSeparator.ToCharArray())))
+                foreach (var items in myStatusString.Split(FieldFieldSeparator.ToCharArray()).Select(fvp => fvp.Split(FieldValueSeparator.ToCharArray())).Where(items => items != null && items.Length >= 2))
                 {
                     Field key;
                     Enum.TryParse(items[0], true, out key);
@@ -113,28 +135,46 @@ namespace aamcommon
             }
         }
 
+        public string FieldValue(Field f, string format)
+        {
+            return myFields.ContainsKey(f) && !string.IsNullOrEmpty(myFields[f]) ?
+                string.Format(format, myFields[f]) :
+                string.Empty;
+        }
+
         public override string ToString()
         {
-            AgentStatus status;
-            Enum.TryParse(myFields[Field.Status], false, out status);
-            switch (status)
+            var status = AgentStatus.NA;
+            var trace = string.Empty;
+            try
             {
-                case AgentStatus.NA:
-                    return "no information";
-                case AgentStatus.Setup:
-                case AgentStatus.Cleanup:
-                case AgentStatus.TestExecution:
-                    return string.Format("{0} is running{1}.", status,
-                        myFields.ContainsKey(Field.Build) ? string.Format(" for build {0}{1}", myFields[Field.Build],
-                        myFields.ContainsKey(Field.Assembly) ? string.Format(" assembly {0}{1}", myFields[Field.Assembly],
-                        myFields.ContainsKey(Field.TC) ? string.Format(" test case {0}", myFields[Field.TC]) : "") : "") : "");
-                case AgentStatus.Offline:
-                case AgentStatus.Online:
-                    return status.ToString();
-                case AgentStatus.Error:
-                    return myFields[Field.Error];
+                if (!myFields.ContainsKey(Field.Status)) return "*";
+                var parsed = Enum.TryParse(myFields[Field.Status], false, out status);
+                switch (status)
+                {
+                    case AgentStatus.NA:
+                        return string.Format("no information ({0} - {1})", myFields[Field.Status], parsed);
+                    case AgentStatus.Setup:
+                    case AgentStatus.Cleanup:
+                    case AgentStatus.TestExecution:
+                        return string.Format("{4} - {0} is running{1}{2}{3}.", status,
+                            FieldValue(Field.Build, " for build {0}"),
+                            FieldValue(Field.Assembly, " assembly {0}"),
+                            FieldValue(Field.TC, " test case {0}"),
+                            FieldValue(Field.LastUpdated, "{0}"));
+                    case AgentStatus.Offline:
+                    case AgentStatus.Online:
+                        return status.ToString();
+                    case AgentStatus.Error:
+                        return myFields.ContainsKey(Field.Error) ? myFields[Field.Error] : "unkown error";
+                }
+                return base.ToString();
+
             }
-            return base.ToString();
+            catch
+            {
+                return string.Format("*** error at status \"{0}\" - trace: {1} ***", status, trace);
+            }
         }
 
     }

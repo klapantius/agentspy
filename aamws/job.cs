@@ -49,11 +49,17 @@ namespace aamws
 
         private readonly Dictionary<Field, string> myFields = new Dictionary<Field, string>();
 
+        public string FieldValue(Field f, object defaultValue)
+        {
+            return myFields.ContainsKey(f) ? myFields[f] : defaultValue.ToString();
+        }
+
         public JobStatus Status
         {
-            get { return (JobStatus)Enum.Parse(typeof(JobStatus), myFields[aamcommon.Field.Status]); }
+            get { return (JobStatus)Enum.Parse(typeof(JobStatus), FieldValue(aamcommon.Field.Status, AgentStatus.NA)); }
             private set
             {
+                if (FieldValue(aamcommon.Field.Status, AgentStatus.NA) == value.ToString()) return;
                 if (EnabledStatusTransitions.ContainsKey(Status) &&
                     EnabledStatusTransitions[Status].All(s => s != value))
                 {
@@ -69,13 +75,9 @@ namespace aamws
             myFields[aamcommon.Field.Status] = JobStatus.Na.ToString();
         }
 
-        public string Field(Field fieldName)
-        {
-            return myFields.ContainsKey(fieldName) ? myFields[fieldName] : string.Empty;
-        }
-
         public void Update(Dictionary<Field, string> fieldsToBeUpdated)
         {
+            var oldStatus = FieldValue(aamcommon.Field.Status, AgentStatus.NA);
             foreach (var update in fieldsToBeUpdated)
             {
                 if (update.Key == aamcommon.Field.Status)
