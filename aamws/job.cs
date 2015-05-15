@@ -27,6 +27,7 @@ namespace aamws
             {StateMachine.Synchronizing, JobStatus.TestExecution},
             {StateMachine.Starting, JobStatus.TestExecution},
             {StateMachine.Running, JobStatus.TestExecution},
+            {StateMachine.Stopping, JobStatus.TestExecution},
             {StateMachine.Completing, JobStatus.TestExecution},
             {StateMachine.Waiting, JobStatus.TestExecution},
             {StateMachine.CleanupDataCollectors, JobStatus.Cleanup},
@@ -75,18 +76,32 @@ namespace aamws
             myFields[aamcommon.Field.Status] = JobStatus.Na.ToString();
         }
 
-        public void Update(Dictionary<Field, string> fieldsToBeUpdated)
+        public void Update(IDictionary<Field, string> fieldsToBeUpdated)
         {
             var oldStatus = FieldValue(aamcommon.Field.Status, AgentStatus.NA);
             foreach (var update in fieldsToBeUpdated)
             {
                 if (update.Key == aamcommon.Field.Status)
                 {
-                    Status =  FineToUsed[(StateMachine)Enum.Parse(typeof(StateMachine),update.Value)];
+                    try
+                    {
+                        Status = FineToUsed[(StateMachine)Enum.Parse(typeof(StateMachine), update.Value)];
+                    }
+                    catch (KeyNotFoundException e)
+                    {
+                        throw new Exception(string.Format("Status \"{0}\" could not be parsed.", update.Value), e);
+                    }
                 }
                 else
                 {
-                    myFields[update.Key] = update.Value;
+                    try
+                    {
+                        myFields[update.Key] = update.Value;
+                    }
+                    catch (KeyNotFoundException e)
+                    {
+                        throw new Exception(string.Format("Status could not be applied for field \"{0}\".", update.Key), e);
+                    }
                 }
             }
         }

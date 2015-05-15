@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Timers;
 
 namespace tail
 {
@@ -11,6 +13,15 @@ namespace tail
         internal IFileReader myFileReader;
         internal Encoding myFileType = Encoding.Default;
         internal bool encodingDetected = false;
+        private bool isWaiting = false;
+        public bool IsWaitingForChanges
+        {
+            get
+            {
+                isWaiting = isWaiting || (myFileReader != null && myFileReader.IsAtTheEOF);
+                return isWaiting;
+            }
+        }
 
         public Tail(string fileName, Encoding fileType)
         {
@@ -20,14 +31,14 @@ namespace tail
                 myFileType = fileType;
             }
             else try
-            {
-                DetectEncoding();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-                myFileType = Encoding.ASCII;
-            }
+                {
+                    DetectEncoding();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                    myFileType = Encoding.ASCII;
+                }
         }
 
         private void DetectEncoding()
@@ -85,6 +96,7 @@ namespace tail
 
         #region watching
         private FileSystemWatcher fsWatcher;
+        private Timer watchDog;
 
         public void StopWatching()
         {
@@ -97,18 +109,32 @@ namespace tail
 
             var dir = Path.GetDirectoryName(myFileReader.FileName);
             if (string.IsNullOrEmpty(dir)) dir = Environment.CurrentDirectory;
-            fsWatcher = new FileSystemWatcher(dir, Path.GetFileName(myFileReader.FileName));
+            var fname = Path.GetFileName(myFileReader.FileName);
+            fsWatcher = new FileSystemWatcher(dir, fname);
             fsWatcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.LastAccess | NotifyFilters.CreationTime | NotifyFilters.Size;
             fsWatcher.Changed += fsWatcher_Changed;
             fsWatcher.Created += fsWatcher_Changed;
             fsWatcher.Deleted += fsWatcher_Changed;
             fsWatcher.Renamed += fsWatcher_Changed;
             fsWatcher.EnableRaisingEvents = true;
+
+            watchDog = new Timer(5000) { AutoReset = true, Enabled = true };
+            watchDog.Elapsed += (sender, args) => fsWatcher_Changed(sender, new FileSystemEventArgs(WatcherChangeTypes.Changed, dir, fname));
+
+            Console.WriteLine("Tailing {0}\\{1} ", dir, fname);
+            if (!File.Exists(Path.Combine(dir, fname)))
+            {
+                Console.WriteLine("The file doesn't exist at the moment.");
+            }
+            else
+            {
+                Console.WriteLine("Last changed: {0}", File.GetLastWriteTime(Path.Combine(dir, fname)));
+            }
         }
 
         void fsWatcher_Changed(object sender, FileSystemEventArgs e)
         {
-            if (e.ChangeType != WatcherChangeTypes.Changed && e.ChangeType != WatcherChangeTypes.Created) return;
+            //if (e.ChangeType != WatcherChangeTypes.Changed && e.ChangeType != WatcherChangeTypes.Created) return;
             if (!encodingDetected)
             {
                 DetectEncoding();

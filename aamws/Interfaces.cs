@@ -11,7 +11,7 @@ namespace aamws
         JobStatus Status { get; }
         string Error { get; }
 
-        void Update(Dictionary<Field, string> fieldsToBeUpdated);
+        void Update(IDictionary<Field, string> fieldsToBeUpdated);
     }
 
     interface IJobFactory
@@ -19,7 +19,7 @@ namespace aamws
         IJob Create(string id);
     }
 
-    public delegate void LogParserEventHandler(string jobid, Dictionary<Field, string> fieldsToBeUpdated);
+    public delegate void LogParserEventHandler(string jobid, IDictionary<Field, string> fieldsToBeUpdated, bool publish);
 
     public interface ILogParser : IDisposable
     {
@@ -34,7 +34,7 @@ namespace aamws
         string Rule { get; }
 
         bool IsMatching(string line);
-        Dictionary<Field, string> Parse(string line);
+        IDictionary<Field, string> Parse(string line);
     }
 
 

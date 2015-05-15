@@ -2,13 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 using aamcommon;
+using System.Collections.Concurrent;
 
 namespace aamws
 {
     public class LogParserRule : ILogParserRule
     {
-        private Regex regex;
+        private readonly Regex regex;
 
         public LogParserRule(string rule)
         {
@@ -23,16 +25,19 @@ namespace aamws
             return regex.IsMatch(line);
         }
 
-        public Dictionary<Field, string> Parse(string line)
+        public IDictionary<Field, string> Parse(string line)
         {
             if (!IsMatching(line)) return null;
 
-            var result = new Dictionary<Field, string>();
+            var result = new ConcurrentDictionary<Field, string>();
             var groups = regex.Match(line).Groups;
             foreach (var groupName in regex.GetGroupNames().Where(n => n!="0"))
             {
                 var field = (Field) Enum.Parse(typeof (Field), groupName);
-                result.Add(field, groups[groupName].Value);
+                while (!result.TryAdd(field, groups[groupName].Value))
+                {
+                    Thread.Sleep(1000);
+                }
             }
 
             return result;

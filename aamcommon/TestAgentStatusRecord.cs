@@ -1,5 +1,6 @@
 ﻿
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -30,7 +31,7 @@ namespace aamcommon
     }
 
     public enum AgentStatus { NA, Offline, Setup, TestExecution, Cleanup, Online, Finished = Online, Error }
-    public enum Field { LogType, Status, Build, Assembly, TC, Error, LastUpdated, JobId }
+    public enum Field { LogType, Controller, AgentName, Status, Build, Assembly, TC, Error, TimeStamp, JobId }
 
     /// <summary>
     /// a collection of status fields. The values may be reached via the indexer.
@@ -38,35 +39,37 @@ namespace aamcommon
     /// </summary>
     public class TestAgentStatusRecord
     {
-        private static readonly Dictionary<AgentStatus, List<Field>> NeededFields = new Dictionary<AgentStatus, List<Field>>()
+        private static readonly Dictionary<AgentStatus, List<Field>> NeededFields = new Dictionary
+            <AgentStatus, List<Field>>()
         {
             {AgentStatus.NA, new List<Field>()},
-            {AgentStatus.Offline, new List<Field>()},
-            {AgentStatus.Online, new List<Field>()},
-            {AgentStatus.Setup, new List<Field>(){Field.Build, Field.Assembly}},
-            {AgentStatus.TestExecution, new List<Field>(){Field.Build, Field.Assembly, Field.TC}},
-            {AgentStatus.Cleanup, new List<Field>(){Field.Build, Field.Assembly}},
-            {AgentStatus.Error, new List<Field>(){Field.Error}},
+            {AgentStatus.Offline, new List<Field>() {Field.TimeStamp, Field.AgentName, Field.Controller}},
+            {AgentStatus.Online, new List<Field>() {Field.TimeStamp, Field.AgentName, Field.Controller}},
+            {AgentStatus.Setup, new List<Field>() {Field.TimeStamp, Field.AgentName, Field.Controller, Field.Build, Field.Assembly}},
+            {AgentStatus.TestExecution, new List<Field>() {Field.TimeStamp, Field.AgentName, Field.Controller, Field.Build, Field.Assembly, Field.TC}},
+            {AgentStatus.Cleanup, new List<Field>() {Field.TimeStamp, Field.AgentName, Field.Controller, Field.Build, Field.Assembly}},
+            {AgentStatus.Error, new List<Field>() {Field.TimeStamp, Field.AgentName, Field.Controller, Field.Error}},
         };
 
         #region changed event
-        public delegate void ChangedEventHandler(object sender, string e);
+        public delegate void ChangedEventHandler(object sender);
         public event ChangedEventHandler Changed;
 
-        protected virtual void OnChanged(string e)
+        protected virtual void OnChanged()
         {
-            if (Changed != null)
-                Changed(this, e);
+            if (myPublish && Changed != null)
+                Changed(this);
         }
 
         #endregion
 
         public const string FieldValueSeparator = ":";
-        public const string FieldFieldSeparator = ";";
+        public const string FieldFieldSeparator = ",";
 
         private string activeJob;
-        private readonly Dictionary<Field, string> myFields = new Dictionary<Field, string>();
+        private readonly IDictionary<Field, string> myFields = new ConcurrentDictionary<Field, string>();
         private AgentStatus myStatus { get { return (AgentStatus)Enum.Parse(typeof(AgentStatus), myFields[Field.Status], true); } }
+        private bool myPublish;
 
         public string this[Field f]
         {
@@ -77,10 +80,7 @@ namespace aamcommon
         public TestAgentStatusRecord()
         {
             Enum.GetNames(typeof(Field)).ToList().ForEach(f => myFields.Add((Field)Enum.Parse(typeof(Field), f), string.Empty));
-            Update(string.Empty, new Dictionary<Field, string>()
-            {
-                {Field.Status, AgentStatus.NA.ToString()}
-            });
+            Update(string.Empty, new Dictionary<Field, string>() {{Field.Status, AgentStatus.NA.ToString()}}, false);
         }
 
         /// <summary>
@@ -88,20 +88,15 @@ namespace aamcommon
         /// </summary>
         /// <param name="jobid"></param>
         /// <param name="fieldsToBeUpdated"></param>
-        public void Update(string jobid, Dictionary<Field, string> fieldsToBeUpdated)
+        public void Update(string jobid, IDictionary<Field, string> fieldsToBeUpdated, bool publish)
         {
+            myPublish = publish;
             UpdateFields(fieldsToBeUpdated);
-            StatusString = string.Join(FieldFieldSeparator, myFields.
-                Where(f => !string.IsNullOrEmpty(f.Value)).
-                Select(f => string.Join(FieldValueSeparator, new[] { f.Key.ToString(), f.Value })).
-                ToArray());
-            //OnChanged(ToString());
+            OnChanged();
         }
 
-        private void UpdateFields(Dictionary<Field, string> fieldsToBeUpdated)
+        private void UpdateFields(IDictionary<Field, string> fieldsToBeUpdated)
         {
-            //myFields.Clear();
-
             // apply incoming changes
             foreach (var field in fieldsToBeUpdated)
             {
@@ -115,23 +110,20 @@ namespace aamcommon
             }
         }
 
-        private string myStatusString;
-        public string StatusString
+        public string AsJson
         {
-            get { return myStatusString; }
+            get
+            {
+                return string.Format("{{{0}}}", string.Join(", ", 
+                    myFields.
+                        Where(f => !string.IsNullOrEmpty(f.Value)).
+                        Select(f => string.Format("\"{0}\": \"{1}\"", f.Key, f.Value))));
+            }
             set
             {
-                myStatusString = value;
-                var fieldsToBeUpdated = new Dictionary<Field, string>();
-                foreach (var items in myStatusString.Split(FieldFieldSeparator.ToCharArray()).Select(fvp => fvp.Split(FieldValueSeparator.ToCharArray())).Where(items => items != null && items.Length >= 2))
-                {
-                    Field key;
-                    Enum.TryParse(items[0], true, out key);
-                    var val = items[1];
-                    fieldsToBeUpdated.Add(key, val);
-                }
-                UpdateFields(fieldsToBeUpdated);
-                OnChanged(myStatusString);
+                //var fieldsToBeUpdated = new Dictionary<Field, string>();
+                //var nojson = value.Trim('{', '}');
+                //var parts = value.Replace("\"","").Trim('{', '}').Split(',').Select(p => p.Trim('{','}').Split(':'));
             }
         }
 
@@ -161,7 +153,7 @@ namespace aamcommon
                             FieldValue(Field.Build, " for build {0}"),
                             FieldValue(Field.Assembly, " assembly {0}"),
                             FieldValue(Field.TC, " test case {0}"),
-                            FieldValue(Field.LastUpdated, "{0}"));
+                            FieldValue(Field.TimeStamp, "{0}"));
                     case AgentStatus.Offline:
                     case AgentStatus.Online:
                         return status.ToString();

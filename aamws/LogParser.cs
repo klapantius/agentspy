@@ -12,16 +12,19 @@ namespace aamws
 {
     public class LogParser : ILogParser
     {
-        public const string FileNameOfAgentLog = "VSTTAgentProcess.log";
+        public const string FileNameOfAgentLog = @"C:\Program Files (x86)\Microsoft Visual Studio 12.0\Common7\IDE\VSTTAgentProcess.log";
         private string lastJobId = null;
+        private bool init;
 
         public static readonly List<ILogParserRule> Rules = new List<ILogParserRule>()
         {
             new LogParserRule(
                 @"(?<" + Field.LogType + @">\w)" +
                 @", \d*, (?<" + Field.JobId + @">\d*), " +
-                @"(?<" + Field.LastUpdated + @">\d*/\d*/\d*, \d*:\d*:\d*.\d*), " +
-                @".*.exe, StateMachine\(AgentState\): calling state handler for (?<" + Field.Status + @">.*)"),
+                @"(?<" + Field.TimeStamp + @">\d*/\d*/\d*, \d*:\d*:\d*.\d*), " +
+                @"(?<" + Field.AgentName + @">[\w\d_]+)\\.*.exe" +
+                @", StateMachine\(AgentState\): calling state handler for (?<" + Field.Status + @">.*)"),
+            new LogParserRule(@"AgentSetting ControllerName==(?<" + Field.Controller + @">.*)"),
             new LogParserRule(@"^TestAssemblies=(?<" + Field.Assembly + @">[\d\w\._]+)\.dll$"),
             new LogParserRule(@"HumanReadableId=.(?<" + Field.TC + @">.*)., Id="),
             new LogParserRule(@"logDirGuardedExec=.*tfssysint\$\\(?<" + Field.Build + @">.*)\\logs"),
@@ -38,6 +41,8 @@ namespace aamws
         public void Start()
         {
             if (null == Tail) Tail = new Tail(FileNameOfAgentLog, Encoding.Default);
+
+            init = true;
 
             Tail.Changed += TailUpdateHandler;
             Tail.Watch();
@@ -59,19 +64,21 @@ namespace aamws
         #region changed event
         public event LogParserEventHandler Changed;
 
-        protected virtual void OnChanged(string jobid, Dictionary<Field, string> fieldsToBeUpdated)
+        protected virtual void OnChanged(string jobid, IDictionary<Field, string> fieldsToBeUpdated)
         {
-            if (Changed != null) Changed(jobid, fieldsToBeUpdated);
+            if (Changed != null) Changed(jobid, fieldsToBeUpdated, !init);
         }
 
         #endregion
         public void TailUpdateHandler(object o, TailEventArgs e)
         {
+            IDictionary<Field, string> result = null;
             foreach (var line in e.NewLines)
             {
                 var matching = Rules.SingleOrDefault(r => r.IsMatching(line));
                 if (null == matching) continue;
-                var result = matching.Parse(line);
+                result = matching.Parse(line);
+                //if (result.ContainsKey(Field.TimeStamp)) Console.WriteLine(result[Field.TimeStamp]);
                 var jobid = result.ContainsKey(Field.JobId) ? result[Field.JobId] : "";
                 if (!string.IsNullOrEmpty(jobid))
                 {
@@ -88,6 +95,11 @@ namespace aamws
                     Jobs.Single(j => j.Id == lastJobId).Update(result);
                     OnChanged(jobid, result);
                 }
+            }
+            if (init)
+            {
+                init = false;
+                if (null!=result) OnChanged(lastJobId, result);
             }
         }
 

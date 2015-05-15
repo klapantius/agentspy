@@ -15,6 +15,7 @@ namespace tail
         List<string> GetNewLines();
         void Watch();
         void StopWatching();
+        bool IsWaitingForChanges { get; }
     }
 
     interface IFileReader
@@ -23,6 +24,8 @@ namespace tail
         byte[] ReadLastNBytes(long n);
         byte[] ReadNewBytes(long max = -1);
         void ResetPosition();
+        long Position { get; }
+        bool IsAtTheEOF { get; }
     }
 
     interface IMockableFileStream : IDisposable
