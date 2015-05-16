@@ -4,6 +4,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using Newtonsoft.Json;
 
 [assembly: InternalsVisibleTo("aamcommon_test")]
 
@@ -114,16 +115,18 @@ namespace aamcommon
         {
             get
             {
-                return string.Format("{{{0}}}", string.Join(", ", 
-                    myFields.
-                        Where(f => !string.IsNullOrEmpty(f.Value)).
-                        Select(f => string.Format("\"{0}\": \"{1}\"", f.Key, f.Value))));
+                return JsonConvert.SerializeObject(myFields, typeof (Dictionary<Field, string>), Formatting.None,
+                    new JsonSerializerSettings()
+                    {
+                        NullValueHandling = NullValueHandling.Ignore,
+                        DefaultValueHandling = DefaultValueHandling.Ignore,
+                        
+                    });
             }
             set
             {
-                //var fieldsToBeUpdated = new Dictionary<Field, string>();
-                //var nojson = value.Trim('{', '}');
-                //var parts = value.Replace("\"","").Trim('{', '}').Split(',').Select(p => p.Trim('{','}').Split(':'));
+                var fieldsToBeUpdated = (Dictionary<Field, string>)JsonConvert.DeserializeObject(value, typeof(Dictionary<Field, string>));
+                Update("0", fieldsToBeUpdated, true); 
             }
         }
 

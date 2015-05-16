@@ -47,35 +47,43 @@ namespace tail
                 if (secsLeft-- < 0) return new byte[] { };
                 Thread.Sleep(1000);
             }
-            using (var fs = myFileStream ?? new MockableFileStream(FileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            try
             {
-                // compare the size of the file to the last position
-                // and return an empty array if nothing has changed since the last read
-                if (fs.Length == Position) return new byte[] { };
+                using (var fs = myFileStream ?? new MockableFileStream(FileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    // compare the size of the file to the last position
+                    // and return an empty array if nothing has changed since the last read
+                    if (fs.Length == Position) return new byte[] { };
 
-                long bytesToRead;
-                // decide the start position and the number of bytes to read:
-                // if no bytes read yet get the minimum of file size vs max enabled (if any)
-                if (Position == 0 || fs.Length < Position) bytesToRead = GetMinOrFirst(fs.Length, max);
-                // else get the minimum of difference between file size and last position vs max enabled (if any)
-                else bytesToRead = GetMinOrFirst(fs.Length - Position, max);
+                    long bytesToRead;
+                    // decide the start position and the number of bytes to read:
+                    // if no bytes read yet get the minimum of file size vs max enabled (if any)
+                    if (Position == 0 || fs.Length < Position) bytesToRead = GetMinOrFirst(fs.Length, max);
+                    // else get the minimum of difference between file size and last position vs max enabled (if any)
+                    else bytesToRead = GetMinOrFirst(fs.Length - Position, max);
 
-                // reset file pointer if the file has been reset since the last read
-                // (assumed the file is still smaller than the last read position before reset / assumed it was at the end)
-                if (fs.Length < Position) Position = 0;
+                    // reset file pointer if the file has been reset since the last read
+                    // (assumed the file is still smaller than the last read position before reset / assumed it was at the end)
+                    if (fs.Length < Position) Position = 0;
 
-                // read now
-                var buf = new byte[bytesToRead];
-                fs.Seek(Position, SeekOrigin.Begin);
-                fs.Read(buf, 0, (int)bytesToRead);
+                    // read now
+                    var buf = new byte[bytesToRead];
+                    fs.Seek(Position, SeekOrigin.Begin);
+                    fs.Read(buf, 0, (int)bytesToRead);
 
-                // notice the new position
-                Position = fs.Position;
-                IsAtTheEOF = (fs.Position == fs.Length);
+                    // notice the new position
+                    Position = fs.Position;
+                    IsAtTheEOF = (fs.Position == fs.Length);
 
-                fs.Close();
+                    fs.Close();
 
-                return buf;
+                    return buf;
+                }
+
+            }
+            catch (FileNotFoundException)
+            {
+                return new byte[] { };
             }
         }
 

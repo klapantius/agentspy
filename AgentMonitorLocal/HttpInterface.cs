@@ -65,9 +65,9 @@ namespace AgentMonitorLocal_prototype
             });
         }
 
-        public void SendStatusRequests()
+        public void SendStatusRequests(params string[] agents)
         {
-            myConnections.AsParallel().ForAll(connection =>
+            agents.AsParallel().ForAll(connection =>
             {
                 try
                 {
@@ -106,6 +106,15 @@ namespace AgentMonitorLocal_prototype
         public void Dispose()
         {
             Close();
+        }
+
+        public delegate void StatusUpdateHandler(string json);
+        public event StatusUpdateHandler StatusUpdateReceived;
+
+        protected virtual void OnStatusUpdateReceived(string json)
+        {
+            StatusUpdateHandler handler = StatusUpdateReceived;
+            if (handler != null) handler(json);
         }
 
     }
