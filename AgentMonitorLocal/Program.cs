@@ -21,7 +21,6 @@ namespace AgentMonitorLocal_prototype
         {
             try
             {
-                var httpInterface = new HttpInterface();
 
                 args.LastOrDefault(a => Enum.TryParse(a.Trim('/', '-'), true, out executionMode));
                 Console.WriteLine("execution mode: {0}", executionMode);
@@ -29,17 +28,11 @@ namespace AgentMonitorLocal_prototype
                 switch (executionMode)
                 {
                     case ExecutionMode.agent:
-                        var rec = new TestAgentStatusRecord();
-                        rec.Changed += (sender) => Console.WriteLine("{0} - {1}", DateTime.Now.ToLongTimeString(), sender);
-                        rec.Changed += (sender) => httpInterface.SendStatus(((TestAgentStatusRecord)sender).AsJson);
-
-                        var parser = new LogParser();
-                        parser.Changed += rec.Update;
-                        parser.Start();
-
+                        var a = new Agent();
                         break;
 
                     case ExecutionMode.observer:
+                        var o = new Observer();
                         break;
                 }
                 Console.WriteLine("Press any key to abort.{0}{0}", Environment.NewLine);

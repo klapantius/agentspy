@@ -75,7 +75,25 @@ namespace aamws
             IDictionary<Field, string> result = null;
             foreach (var line in e.NewLines)
             {
-                var matching = Rules.SingleOrDefault(r => r.IsMatching(line));
+                ILogParserRule matching;
+                try
+                {
+                    matching = Rules.SingleOrDefault(r => r.IsMatching(line));
+                }
+                catch (InvalidOperationException exception)
+                {
+                    if (exception.Message.Contains("more than one"))
+                    {
+                        var rules = Rules.Where(r => r.IsMatching(line)).Select(r => r.Rule);
+                        Console.WriteLine("Rule conflict!!! These rules: {0}{1}{0}are matching at the same time on this line:{0}{2}",
+                            Environment.NewLine, string.Join(Environment.NewLine, rules), line);
+                    }
+                    else
+                    {
+                        Console.WriteLine("{0} caught (\"{1}\") while tryint to parser line: \"{2}\"", exception.GetType().Name, exception.Message, line);
+                    }
+                    matching = Rules.FirstOrDefault(r => r.IsMatching(line));
+                }
                 if (null == matching) continue;
                 result = matching.Parse(line);
                 //if (result.ContainsKey(Field.TimeStamp)) Console.WriteLine(result[Field.TimeStamp]);
