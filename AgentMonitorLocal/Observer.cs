@@ -11,7 +11,7 @@ using HttpStatusCode = Nancy.HttpStatusCode;
 
 namespace AgentMonitorLocal_prototype
 {
-    public class Observer : HttpInterface
+    public class Observer : HttpInterface, IExecutorModule
     {
 
         private List<Connection> myConnections = new List<Connection>()
@@ -88,6 +88,11 @@ namespace AgentMonitorLocal_prototype
             return true;
         }
 
+
+        public SimpleResponder HttpRequestProcessor()
+        {
+            throw new NotImplementedException();
+        }
     }
 
     public class ObserverModule : NancyModule, IDisposable

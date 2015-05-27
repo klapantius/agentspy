@@ -25,16 +25,23 @@ namespace AgentMonitorLocal_prototype
                 args.LastOrDefault(a => Enum.TryParse(a.Trim('/', '-'), true, out executionMode));
                 Console.WriteLine("execution mode: {0}", executionMode);
 
+                IExecutorModule module;
+
                 switch (executionMode)
                 {
                     case ExecutionMode.agent:
-                        var a = new Agent();
+                        module = new Agent();
                         break;
 
                     case ExecutionMode.observer:
-                        var o = new Observer();
+                        module = new Observer();
                         break;
+                    default:
+                        throw new Exception("something is very odd");
                 }
+
+                var w = new WebServer(module.HttpRequestProcessor, "http://localhost:7789/agentmonitor");
+
                 Console.WriteLine("Press any key to abort.{0}{0}", Environment.NewLine);
                 Console.ReadLine();
 
