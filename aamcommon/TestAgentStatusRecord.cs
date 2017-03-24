@@ -111,17 +111,29 @@ namespace aamcommon
             }
         }
 
+        public string StatusString
+        {
+            get
+            {
+                return myStatus.ToString();
+            }
+            internal set
+            {
+                Update("0", new Dictionary<Field, string>() {{ Field.Status, value }}, false);
+            }
+        }
+
         public string AsJson
         {
             get
             {
-                return JsonConvert.SerializeObject(myFields, typeof (Dictionary<Field, string>), Formatting.None,
-                    new JsonSerializerSettings()
-                    {
-                        NullValueHandling = NullValueHandling.Ignore,
-                        DefaultValueHandling = DefaultValueHandling.Ignore,
-                        
-                    });
+                //return JsonConvert.SerializeObject(myFields, typeof (Dictionary<Field, string>), Formatting.None,
+                //    new JsonSerializerSettings()
+                //    {
+                //        NullValueHandling = NullValueHandling.Ignore,
+                //        DefaultValueHandling = DefaultValueHandling.Ignore,
+                //    });
+                return JsonConvert.SerializeObject(myFields, Formatting.None);
             }
             set
             {

@@ -28,6 +28,7 @@ namespace aamws
             new LogParserRule(@"^TestAssemblies=(?<" + Field.Assembly + @">[\d\w\._]+)\.dll$"),
             new LogParserRule(@"HumanReadableId=.(?<" + Field.TC + @">.*)., Id="),
             new LogParserRule(@"logDirGuardedExec=.*tfssysint\$\\(?<" + Field.Build + @">.*)\\logs"),
+            new LogParserRule(@"StateMachine\(TestState\): Caught (?<" + Field.Error + @">.*)\. Finished in state Stopping"),
         };
 
         internal ITail Tail { get; set; }

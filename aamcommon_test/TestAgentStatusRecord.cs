@@ -28,8 +28,9 @@ namespace aamcommon_test
             r.Update(TestJobId, new Dictionary<Field, string>()
             {
                 {Field.Status, AgentStatus.Offline.ToString()}
-            });
-            StringAssert.Contains(expectedContent, r.StatusString, "Wrong or missing status in StatusString.");
+            },
+            false);
+            StringAssert.Contains(expectedContent, r.Status, "Wrong or missing status in StatusString.");
         }
 
         [TestCase]
